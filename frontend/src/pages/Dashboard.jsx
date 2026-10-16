@@ -27,6 +27,7 @@ export default function Dashboard() {
 
   const role = user.role;
   const isStaff = role !== 'patient';
+  const canCreateAppointment = role === 'patient' || role === 'doctor';
 
   const handleLogout = useCallback(() => {
     dispatch(logout());
@@ -114,9 +115,11 @@ export default function Dashboard() {
       <main className="page">
         <div className="row">
           <h1>{role === 'patient' ? 'My appointments' : role === 'doctor' ? 'My schedule' : 'All appointments'}</h1>
-          <button className="primary" onClick={() => openNewAppointment()} disabled={!doctors.length}>New appointment</button>
+          {canCreateAppointment && (
+            <button className="primary" onClick={() => openNewAppointment()} disabled={!doctors.length}>New appointment</button>
+          )}
         </div>
-        <QuickBook token={token} onResult={openNewAppointment} />
+        {canCreateAppointment && <QuickBook token={token} onResult={openNewAppointment} />}
         <AppointmentFilters filters={filters} doctors={doctors} role={role} onChange={setFilters} onClear={() => setFilters(EMPTY_FILTERS)} />
         {error && <p className="error" role="alert">{error}</p>}
         {!loading && items.length === 0
