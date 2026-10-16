@@ -2,20 +2,26 @@ import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectAuth, setCredentials } from '../store/authSlice.js';
-import { useGetCurrentUserQuery } from '../services/authApi.js';
+import { authApi, useGetCurrentUserQuery } from '../services/authApi.js';
 
 export default function ProtectedRoute({ allowedRoles }) {
   const dispatch = useDispatch();
   const location = useLocation();
   const { token, user } = useSelector(selectAuth);
-  const { data, error, isLoading, isFetching } = useGetCurrentUserQuery(undefined, { skip: !token });
+  const { data, error, isLoading, isFetching } = useGetCurrentUserQuery(undefined, {
+    skip: !token,
+    refetchOnMountOrArgChange: true,
+  });
 
   useEffect(() => {
     if (data?.user) dispatch(setCredentials({ user: data.user }));
   }, [data, dispatch]);
 
   useEffect(() => {
-    if (error?.status === 401) dispatch(logout());
+    if (error?.status === 401) {
+      dispatch(logout());
+      dispatch(authApi.util.resetApiState());
+    }
   }, [dispatch, error]);
 
   if (!token) {

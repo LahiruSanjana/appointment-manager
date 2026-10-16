@@ -8,6 +8,7 @@ import { QuickBook, SummaryModal, PrepModal } from '../AiPanels.jsx';
 import AppointmentFilters from '../components/AppointmentFilters.jsx';
 import AppointmentTable from '../components/AppointmentTable.jsx';
 import { logout, selectAuth } from '../store/authSlice.js';
+import { authApi } from '../services/authApi.js';
 
 const EMPTY_FILTERS = { q: '', status: '', doctor: '', type: '' };
 
@@ -24,13 +25,15 @@ export default function Dashboard() {
   const [prepFor, setPrepFor] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sessionKey, setSessionKey] = useState(token);
 
   const role = user.role;
   const isStaff = role !== 'patient';
-  const canCreateAppointment = role === 'patient' || role === 'doctor';
+  const canCreateAppointment = role === 'patient';
 
   const handleLogout = useCallback(() => {
     dispatch(logout());
+    dispatch(authApi.util.resetApiState());
     navigate('/login', { replace: true });
   }, [dispatch, navigate]);
 
@@ -39,11 +42,27 @@ export default function Dashboard() {
     else setError(err.message);
   }, [handleLogout]);
 
+  useEffect(() => {
+    if (sessionKey === token) return;
+    setSessionKey(token);
+    setItems([]);
+    setDoctors([]);
+    setFilters(EMPTY_FILTERS);
+    setEditing(null);
+    setPrefill(null);
+    setSummaryFor(null);
+    setPrepFor(null);
+    setError('');
+    setLoading(false);
+  }, [token, sessionKey]);
+
   const load = useCallback(async () => {
     setLoading(true);
+    const requestToken = token;
     const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value)).toString();
     try {
-      setItems(await api('/appointments?' + query, { token }));
+      const result = await api('/appointments?' + query, { token: requestToken });
+      if (requestToken === token) setItems(result);
       setError('');
     } catch (err) {
       guard(err);

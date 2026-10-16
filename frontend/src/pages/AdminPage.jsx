@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { logout, selectAuth } from '../store/authSlice.js';
+import { authApi } from '../services/authApi.js';
 
 const ROLES = ['patient', 'doctor', 'admin'];
 
@@ -17,6 +18,7 @@ export default function AdminPage() {
   const handleError = useCallback((err) => {
     if (err.status === 401) {
       dispatch(logout());
+      dispatch(authApi.util.resetApiState());
       navigate('/login', { replace: true });
     } else {
       setError(err.message);

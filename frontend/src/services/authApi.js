@@ -15,6 +15,7 @@ export const authApi = createApi({
   endpoints: (builder) => ({
     getCurrentUser: builder.query({
       query: () => '/auth/me',
+      keepUnusedDataFor: 0,
     }),
   }),
 });
