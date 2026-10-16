@@ -1,0 +1,36 @@
+# Dependencies
+**/node_modules/
+
+# Frontend and build output
+**/dist/
+**/build/
+**/.vite/
+
+# Python environments and caches
+**/.venv/
+**/venv/
+**/__pycache__/
+**/.pytest_cache/
+*.py[cod]
+
+# Environment files and secrets
+**/.env
+**/.env.local
+**/.env.*.local
+!.env.example
+!**/.env.example
+
+# Test and coverage output
+**/.coverage
+**/htmlcov/
+**/.nyc_output/
+**/coverage/
+
+# Logs and local tooling
+*.log
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
