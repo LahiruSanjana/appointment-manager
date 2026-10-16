@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { fmt } from '../constants.js';
 import AppointmentForm from '../AppointmentForm.jsx';
@@ -108,6 +108,7 @@ export default function Dashboard() {
       <header className="bar">
         <strong>Appointment Desk</strong>
         <span className="muted">{user.name} ({role})</span>
+        {role === 'admin' && <Link to="/admin">Manage users</Link>}
         <button onClick={handleLogout}>Log out</button>
       </header>
       <main className="page">

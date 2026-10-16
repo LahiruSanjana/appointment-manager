@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { logout, selectAuth } from '../store/authSlice.js';
 
@@ -51,7 +51,10 @@ export default function AdminPage() {
 
   return (
     <main className="page">
-      <h1>Administration</h1>
+      <div className="row">
+        <h1>Administration</h1>
+        <Link to="/">Back to appointments</Link>
+      </div>
       <p className="muted">Assign patient, doctor, or administrator access to each account.</p>
       {error && <p className="error" role="alert">{error}</p>}
       <div className="scroll">

@@ -107,6 +107,8 @@ Uses Jest, Supertest and an in-memory MongoDB (downloaded on first run), so no d
 | POST | /api/auth/register | creates a patient |
 | POST | /api/auth/login | returns token |
 | GET | /api/auth/me | current user |
+| GET | /api/users | admin-only user list |
+| PATCH | /api/users/:id/role | admin-only role assignment |
 | GET | /api/doctors | list doctors |
 | POST | /api/appointments | create |
 | GET | /api/appointments?q=&status=&type=&doctor=&from=&to= | list, search, filter |
