@@ -1,10 +1,16 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { api } from './api.js';
 import { TYPES, STATUSES, fmt } from './constants.js';
 import AppointmentForm from './AppointmentForm.jsx';
 import { QuickBook, SummaryModal, PrepModal } from './AiPanels.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+import { logout, selectAuth, setCredentials } from './store/authSlice.js';
 
 function AuthScreen({ onAuth }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [mode, setMode] = useState('login');
   const [f, setF] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
@@ -19,6 +25,7 @@ function AuthScreen({ onAuth }) {
         body: mode === 'login' ? { email: f.email, password: f.password } : f,
       });
       onAuth(data);
+      navigate(location.state?.from?.pathname || '/', { replace: true });
     } catch (err) { setError(err.message); }
   }
 
@@ -42,8 +49,11 @@ function AuthScreen({ onAuth }) {
   );
 }
 
-export default function App() {
-  const [session, setSession] = useState(() => JSON.parse(localStorage.getItem('session') || 'null'));
+function Dashboard() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { user, token } = useSelector(selectAuth);
+  const session = { user, token };
   const [items, setItems] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [filters, setFilters] = useState({ q: '', status: '', doctor: '', type: '' });
@@ -54,13 +64,17 @@ export default function App() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const token = session?.token;
-  const role = session?.user.role;
+  const role = user.role;
   const isStaff = role !== 'patient';
 
-  const logout = useCallback(() => { localStorage.removeItem('session'); setSession(null); }, []);
-  const onAuth = (data) => { localStorage.setItem('session', JSON.stringify(data)); setSession(data); };
-  const guard = useCallback((err) => { if (err.status === 401) logout(); else setError(err.message); }, [logout]);
+  const handleLogout = useCallback(() => {
+    dispatch(logout());
+    navigate('/login', { replace: true });
+  }, [dispatch, navigate]);
+  const guard = useCallback((err) => {
+    if (err.status === 401) handleLogout();
+    else setError(err.message);
+  }, [handleLogout]);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -73,8 +87,6 @@ export default function App() {
 
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
   useEffect(() => { if (token) api('/doctors', { token }).then(setDoctors).catch(guard); }, [token, guard]);
-
-  if (!session) return <AuthScreen onAuth={onAuth} />;
 
   async function save(payload) {
     const isNew = editing === 'new';
@@ -100,7 +112,7 @@ export default function App() {
       <header className="bar">
         <strong>Appointment Desk</strong>
         <span className="muted">{session.user.name} ({role})</span>
-        <button onClick={logout}>Log out</button>
+        <button onClick={handleLogout}>Log out</button>
       </header>
       <main className="page">
         <div className="row">
@@ -162,5 +174,54 @@ export default function App() {
       {summaryFor && <SummaryModal appt={summaryFor} token={token} onChanged={load} onClose={() => setSummaryFor(null)} />}
       {prepFor && <PrepModal apptId={prepFor} token={token} onClose={() => setPrepFor(null)} />}
     </>
+  );
+}
+
+function LoginPage() {
+  const dispatch = useDispatch();
+  return <AuthScreen onAuth={(data) => dispatch(setCredentials(data))} />;
+}
+
+function UnauthorizedPage() {
+  return (
+    <main className="auth">
+      <h1>Access denied</h1>
+      <p className="muted">You do not have permission to view this page.</p>
+      <a href="/">Return to the appointment desk</a>
+    </main>
+  );
+}
+
+function NotFoundPage() {
+  return (
+    <main className="auth">
+      <h1>Page not found</h1>
+      <a href="/">Return to the appointment desk</a>
+    </main>
+  );
+}
+
+function AdminPage() {
+  return (
+    <main className="page">
+      <h1>Administration</h1>
+      <p className="muted">This area is restricted to administrators.</p>
+    </main>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      <Route element={<ProtectedRoute allowedRoles={['admin', 'doctor', 'patient']} />}>
+        <Route path="/" element={<Dashboard />} />
+      </Route>
+      <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+        <Route path="/admin" element={<AdminPage />} />
+      </Route>
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   );
 }
